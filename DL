@@ -1,0 +1,532 @@
+..........................................................Deep Learning......................................................
+
+................................................Assignment__1--->Boston housing price prediction...................................................
+.................................................................................................................................................
+import numpy as np
+import pandas as pd
+from sklearn.datasets import load_boston
+
+boston = load_boston()
+data = pd.DataFrame(boston.data)
+
+data.head()
+
+data.columns = boston.feature_names
+
+data['PRICE'] = boston.target
+
+data.head(n=10)
+
+print(data.shape) 
+
+data.isnull().sum()
+
+data.describe()
+
+data.info()
+
+import seaborn as sns
+sns.distplot(data.PRICE)
+sns.boxplot(data.PRICE)
+
+correlation = data.corr() 
+correlation.loc['PRICE']
+
+import matplotlib.pyplot as plt
+fig,axes = plt.subplots(figsize=(15,12))
+sns.heatmap(correlation,square = True,annot = True)
+
+plt.figure(figsize = (20,5))
+
+
+features = ['LSTAT','RM','PTRATIO']
+for i, col in enumerate(features): 
+    plt.subplot(1, len(features) , i+1)
+    x = data[col]
+    y = data.PRICE 
+    plt.scatter(x, y, marker='o')
+    plt.title("Variation in House prices")
+    plt.xlabel(col)
+
+    plt.ylabel('"House prices in $1000"')
+
+
+X = data.iloc[:,:-1]
+y= data.PRICE
+
+from sklearn.model_selection import train_test_split
+X_train,X_test,y_train,y_test=train_test_split(X,y,
+                                               test_size=0.25,
+                                               shuffle=True)
+
+
+#Linear Regression
+from sklearn.linear_model import LinearRegression
+
+regressor = LinearRegression()
+regressor.fit(X_train,y_train)
+y_pred = regressor.predict(X_test)
+
+y_pred
+
+from sklearn.metrics import mean_squared_error
+rmse = (np.sqrt(mean_squared_error(y_test, y_pred))) 
+print(rmse)
+
+
+from sklearn.metrics import r2_score 
+r2 = r2_score(y_test, y_pred) 
+print(r2)
+
+from sklearn.preprocessing import StandardScaler
+sc = StandardScaler()
+
+X_train = sc.fit_transform(X_train)
+X_test = sc.transform(X_test)
+
+import keras
+
+from keras.layers import Dense, Activation,Dropout 
+from keras.models import Sequential
+
+model = Sequential()
+model.add(Dense(128,activation = 'relu',input_dim =13))
+model.add(Dense(64,activation = 'relu'))
+
+model.add(Dense(32,activation= 'relu')) 
+model.add(Dense(16,activation= 'relu'))
+model.add(Dense(1))
+
+model.compile(optimizer = 'adam',loss='mean_squared_error',metrics=['mae'])
+
+!pip install ann_visualizer
+!pip install graphviz
+
+from ann_visualizer.visualize import ann_viz
+
+history = model.fit(X_train, y_train, epochs=100, validation_split=0.05)
+
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+
+!pip install plotly
+
+fig = go.Figure()
+fig.add_trace(go.Scattergl(y=history.history['loss'],name='Train'))
+fig.add_trace(go.Scattergl(y=history.history['val_loss'],name='Valid'))
+
+
+fig.update_layout(height=500, width=700,
+xaxis_title='Epoc h', yaxis_title='Loss')
+
+
+fig.update_layout(height=500, width=700,
+xaxis_title='Epoc h', yaxis_title='Loss ')
+
+fig.show()
+
+fig = go.Figure()
+
+fig.add_trace(go.Scattergl(y=history.history['mae'],
+name='Train'))
+
+fig.add_trace(go.Scattergl(y=history.history['val_mae'],
+name='Valid'))
+
+
+fig.update_layout(height=500, width=700,
+xaxis_title='Epoch', yaxis_title='Mean Absolute Error')
+
+
+fig.show()
+
+y_pred = model.predict(X_test)
+
+mse_nn, mae_nn = model.evaluate(X_test, y_test)
+
+
+print('Mean squared error on test data: ', mse_nn)
+print('Mean absolute error on test data:', mae_nn)
+
+##Comparison	with	traditional approaches
+
+#First let's try with a simple algorithm, the Linear Regression: from sklearn.metrics import mean_absolute_error
+
+lr_model = LinearRegression() 
+lr_model.fit(X_train, y_train)
+
+y_pred_lr = lr_model.predict(X_test)
+
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_absolute_error
+mse_lr = mean_squared_error(y_test, y_pred_lr) 
+mae_lr = mean_absolute_error(y_test, y_pred_lr)
+
+print('Mean squared error on test data: ', mse_lr)
+print('Mean absolute error on test data:', mae_lr)
+
+from sklearn.metrics import r2_score
+
+r2 = r2_score(y_test, y_pred)
+
+print(r2)
+
+# Predicting RMSE the Test set results
+from sklearn.metrics import mean_squared_error
+rmse = (np.sqrt(mean_squared_error(y_test, y_pred)))
+print(rmse)
+
+
+# Make predictions on new dataimport sklearn
+import sklearn
+new_data = sklearn.preprocessing.StandardScaler().fit_transform(([[0.1, 10.0,5.0, 0, 0.4, 6.0, 50, 6.0, 1, 400, 20, 300, 10]]))
+prediction = model.predict(new_data) 
+print("Predicted house price:", prediction)
+
+................................................................................................................................................
+.........................................Assignment__2A--->using binary IMDB Movie review "positive and negative"........................................
+..................................................................................................................................................
+# In[1]:
+
+import numpy as np
+import pandas as pd
+
+
+# In[2]:
+
+from keras.datasets import imdb
+(X_train, y_train), (X_test, y_test) = imdb.load_data(num_words=10000)
+
+
+# In[3]:
+
+X_train.shape
+
+
+# In[4]:
+
+X_test.shape
+
+
+# In[5]:
+
+def vectorize(sequences, dimension = 10000):
+    results = np.zeros((len(sequences), dimension))
+    for i, sequence in enumerate(sequences):
+        results[i, sequence] = 1
+    return results
+
+
+# In[6]:
+
+#consolidating data for EDA
+data = np.concatenate((X_train, X_test), axis=0)
+label = np.concatenate((y_train, y_test), axis=0)
+
+
+# In[7]:
+
+print("Categories:", np.unique(label))
+print("Number of unique words:", len(np.unique(np.hstack(data))))
+
+
+# In[8]:
+
+length = [len(i) for i in data]
+
+
+# In[9]:
+
+print("Average Review length:", np.mean(length))
+print("Standard Deviation:", round(np.std(length)))
+
+
+# In[10]:
+
+print("Label:", label[0])
+
+
+# In[11]:
+
+print(data[0])
+
+
+# In[12]:
+
+index = imdb.get_word_index()
+reverse_index = dict([(value, key) for (key, value) in index.items()]) 
+decoded = " ".join( [reverse_index.get(i - 3, "#") for i in data[0]] )
+print(decoded) 
+
+
+# In[13]:
+
+#Adding sequence to data
+data = vectorize(data)
+label = np.array(label).astype("float32")
+
+
+# In[14]:
+
+label
+
+
+# In[15]:
+
+#To plot for EDA
+import seaborn as sns
+sns.set(color_codes=True)
+import matplotlib.pyplot as plt
+get_ipython().run_line_magic('matplotlib', 'inline')
+
+
+# In[16]:
+
+labelDF=pd.DataFrame({'label':label})
+sns.countplot(x='label', data=labelDF)
+
+
+# In[17]:
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(data,label, test_size=0.30, random_state=1)
+
+
+# In[18]:
+
+X_train.shape
+
+
+# In[19]:
+
+X_test.shape
+
+
+# In[20]:
+
+from keras.utils import to_categorical
+from keras import models
+from keras import layers
+
+
+# In[21]:
+
+model = models.Sequential()
+# Input - Layer
+model.add(layers.Dense(50, activation = "relu", input_shape=(10000, )))
+# Hidden - Layers
+model.add(layers.Dropout(0.3, noise_shape=None, seed=None))
+model.add(layers.Dense(50, activation = "relu"))
+model.add(layers.Dropout(0.2, noise_shape=None, seed=None))
+model.add(layers.Dense(50, activation = "relu"))
+# Output- Layer
+model.add(layers.Dense(1, activation = "sigmoid"))
+model.summary()
+
+
+# In[22]:
+
+#For early stopping 
+import tensorflow as tf
+callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
+model.compile(
+ optimizer = "adam",
+ loss = "binary_crossentropy",
+ metrics = ["accuracy"]
+)
+
+
+# In[23]:
+
+results = model.fit(
+ X_train, y_train,
+ epochs= 100,
+ batch_size = 40,
+ validation_data = (X_test, y_test),
+ callbacks=[callback]
+)
+
+
+# In[24]:
+
+print(np.mean(results.history["val_accuracy"]))
+
+
+# In[25]:
+
+#Let's plot training history of our model
+
+# list all data in history
+print(results.history.keys())
+# summarize history for accuracy
+plt.plot(results.history['accuracy'])
+plt.plot(results.history['val_accuracy'])
+plt.title('model accuracy')
+plt.ylabel('accuracy')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+
+
+# In[26]:
+
+plt.show()
+# summarize history for loss
+plt.plot(results.history['loss'])
+plt.plot(results.history['val_loss'])
+plt.title('model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.show()
+
+
+# In[27]:
+
+model.predict(X_test)
+
+...........................................................................................................................................................
+......................................................Assignment__2B--->using multiclass IMDB movie review.............................................
+........................................................................................................................................................
+import numpy as np
+
+from tensorflow.keras.datasets import imdb
+
+import matplotlib.pyplot as plt
+
+# Load the dataset
+(X_train,y_train),(X_test,y_test)=imdb.load_data()
+ 
+X=np.concatenate((X_train,X_test),axis=0)
+
+y=np.concatenate((y_train,y_test),axis=0)
+
+# Summarize size
+print("Training data:")
+print(X.shape)
+print(y.shape)
+
+#Word Embedding
+imdb.load_data(nb_words=5000)
+
+#Simple Multi-layer perceptron model for the IMDB Dataset
+from tensorflow.keras.datasets import imdb
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import Embedding
+from tensorflow.keras.preprocessing import sequence
+
+#Truncate or pad the dataset to a length of 500 for each observation
+X_train=sequence.pad_sequences(X_train,maxlen=500)
+X_test=sequence.pad_sequences(X_test,maxlen=500)
+Embedding(5000,32,input_length=500)
+
+#load the dataset but only keep the top n words,zero the rest
+top_words=5000
+(X_train,y_train),(X_test,y_test)=imdb.load_data(num_words=top_words)
+
+#Bound reviews at 500 words,truncating longer reviews and 0 padding shorter one 
+max_words=500
+X_train=sequence.pad_sequences(X_train,maxlen=max_words)
+X_test=sequence.pad_sequences(X_test,maxlen=max_words)
+
+#create the model
+model=Sequential()
+model.add(Embedding(top_words,32,input_length=max_words))
+model.add(Flatten())
+model.add (Dense(250,activation="relu"))
+model.add(Dense(1,activation="sigmoid"))
+model.compile(loss='binary_crossentropy',optimizer='adam',metrics=['accuracy'])
+model.summary()
+
+#Fit the model
+model.fit(X_train,y_train,validation_data=(X_test,y_test),epochs=2,batch_size=128,verbose=2)
+
+#Final evaluation of the model
+scores=model.evaluate(X_test,y_test,verbose=0)
+print("Accuracy:%.2f%%"%(scores[1]*100))
+
+..........................................................................................................................................................................
+.................................................Assignment__3B--->MNIST Fashion and classify fashion clothing..........................................................
+...........................................................................................................................................................
+# In[1]:
+
+import keras
+
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow import keras
+import numpy as np
+(x_train, y_train), (x_test, y_test) = keras.datasets.fashion_mnist.load_data()
+
+
+# In[2]:
+
+plt.imshow(x_train[1])
+
+
+# In[3]:
+
+plt.imshow(x_train[0])
+
+
+# In[4]:
+
+x_train = x_train.astype('float32') / 255.0
+x_test = x_test.astype('float32') / 255.0
+x_train = x_train.reshape(-1, 28, 28, 1)
+x_test = x_test.reshape(-1, 28, 28, 1)
+
+
+# In[5]:
+
+x_train.shape
+(60000, 28, 28)
+x_test.shape
+(10000, 28, 28, 1)
+y_train.shape
+(60000,)
+y_test.shape
+(10000,)
+
+
+# In[6]:
+
+model = keras.Sequential([keras.layers.Conv2D(32, (3,3), activation='relu', input_shape=(28,28,1)),
+
+# It shown 13 * 13 size image with 32 channel or filter or depth.
+keras.layers.MaxPooling2D((2,2)),
+
+keras.layers.Dropout(0.25),
+keras.layers.Conv2D(64, (3,3), activation='relu'),
+keras.layers.MaxPooling2D((2,2)),
+
+# Reduce Overfitting of Training sample drop out 25% Neuron
+keras.layers.Dropout(0.25),
+
+keras.layers.Conv2D(128, (3,3), activation='relu'),
+keras.layers.Flatten(),
+keras.layers.Dense(128, activation='relu'),
+keras.layers.Dropout(0.25),
+keras.layers.Dense(10, activation='softmax')
+])
+
+model.summary()
+
+
+# In[7]:
+
+model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+history = model.fit(x_train, y_train, epochs=10, validation_data=(x_test, y_test))
+
+
+# In[10]:
+
+test_loss, test_acc = model.evaluate(x_test, y_test)
+
+
+# In[11]:
+
+print('Test accuracy:', test_acc)
+
+
